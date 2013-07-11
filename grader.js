@@ -24,8 +24,10 @@ References:
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var rest = require('restler'); 
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var URL_DEFAULT = "http://fierce-reaches-1073.herokuapp.com";
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -61,12 +63,24 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
+var checkURL = function (url) {
+  rest.get(url).on('complete', function(result){
+   fs.writeFileSync("myurl.html", result);
+});
+}; 
 if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-url, --url <url>', 'Path to url', clone(checkURL), URL_DEFAULT)  
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+     var filename='';
+    if (program.file!= null) {
+       filename=program.file;
+  } else { 
+       filename='myurl.html';
+    }
+    var checkJson = checkHtmlFile(filename, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {
