@@ -25,9 +25,9 @@ var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
 var rest = require('restler'); 
-var HTMLFILE_DEFAULT = "index.html";
+var HTMLFILE_DEFAULT = "";
 var CHECKSFILE_DEFAULT = "checks.json";
-var URL_DEFAULT = "http://fierce-reaches-1073.herokuapp.com";
+var URL_DEFAULT = "";
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -42,12 +42,19 @@ var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
 
+var cheerioUrl = function(url) {
+  return(cheerio.load('<h2 class="title">Hello world</h2>'));
+};
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
 
-var checkHtmlFile = function(htmlfile, checksfile) {
-    $ = cheerioHtmlFile(htmlfile);
+var checkHtmlFile = function(htmlfile, url, checksfile) {
+    if ( htmlfile!=""){
+      $ = cheerioHtmlFile(htmlfile);
+    } else {
+      $ = cheerioUrl(url);
+    } 
     var checks = loadChecks(checksfile).sort();
     var out = {};
     for(var ii in checks) {
@@ -63,24 +70,17 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
-var checkURL = function (url) {
-  rest.get(url).on('complete', function(result){
-   fs.writeFileSync("myurl.html", result);
-});
+var assertURL = function (url) {
+  var instr = url.toString();
+  return instr;
 }; 
 if(require.main == module) {
     program
-        .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-        .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-url, --url <url>', 'Path to url', clone(checkURL), URL_DEFAULT)  
+        .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists),CHECKSFILE_DEFAULT)
+        .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists),HTMLFILE_DEFAULT)
+        .option('-url, --url <url>', 'Path to url', clone(assertURL),URL_DEFAULT)  
         .parse(process.argv);
-     var filename='';
-    if (program.file!= null) {
-       filename=program.file;
-  } else { 
-       filename='myurl.html';
-    }
-    var checkJson = checkHtmlFile(filename, program.checks);
+    var checkJson = checkHtmlFile(program.file,program.url, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {
