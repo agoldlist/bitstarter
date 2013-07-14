@@ -42,26 +42,31 @@ var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
 
-var cheerioUrl = function(url) {
-  return(cheerio.load('<h2 class="title">Hello world</h2>'));
-};
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
+};
+var  cheerioProc = function(data,checksfile){
+ $=cheerio.load(data);
+ var checks = loadChecks(checksfile).sort();
+ var out = {};
+ for(var ii in checks) {
+   var present = $(checks[ii]).length > 0;
+    out[checks[ii]] = present;
+ }
+ return out;    
 };
 
 var checkHtmlFile = function(htmlfile, url, checksfile) {
     if ( htmlfile!=""){
-      $ = cheerioHtmlFile(htmlfile);
+     var data = fs.readFileSync(htmlfile);
+     return cheerioProc(data,checksfile);
     } else {
-      $ = cheerioUrl(url);
+      rest.get(url).on('complete', function(result) {
+      var out =   cheerioProc(result,checksfile);
+      console.log (out);
+      return(out);
+     });
     } 
-    var checks = loadChecks(checksfile).sort();
-    var out = {};
-    for(var ii in checks) {
-        var present = $(checks[ii]).length > 0;
-        out[checks[ii]] = present;
-    }
-    return out;
 };
 
 var clone = function(fn) {
